@@ -1,0 +1,137 @@
+{
+  "groups": [
+    {
+      "name": "qslv",
+      "type": "qslv.itest.ConfigProperties",
+      "sourceType": "qslv.itest.ConfigProperties"
+    }
+  ],
+  "properties": [
+    {
+      "name": "qslv.aitid",
+      "type": "java.lang.String",
+      "sourceType": "qslv.itest.ConfigProperties"
+    },
+    {
+      "name": "qslv.cancel-reservation-url",
+      "type": "java.lang.String",
+      "sourceType": "qslv.itest.ConfigProperties"
+    },
+    {
+      "name": "qslv.commit-reservation-url",
+      "type": "java.lang.String",
+      "sourceType": "qslv.itest.ConfigProperties"
+    },
+    {
+      "name": "qslv.kafka-cancel-reply-queue",
+      "type": "java.lang.String",
+      "sourceType": "qslv.itest.ConfigProperties"
+    },
+    {
+      "name": "qslv.kafka-cancel-request-queue",
+      "type": "java.lang.String",
+      "sourceType": "qslv.itest.ConfigProperties"
+    },
+    {
+      "name": "qslv.kafka-commit-reply-queue",
+      "type": "java.lang.String",
+      "sourceType": "qslv.itest.ConfigProperties"
+    },
+    {
+      "name": "qslv.kafka-commit-request-queue",
+      "type": "java.lang.String",
+      "sourceType": "qslv.itest.ConfigProperties"
+    },
+    {
+      "name": "qslv.kafka-consumer-properties-path",
+      "type": "java.lang.String",
+      "sourceType": "qslv.itest.ConfigProperties"
+    },
+    {
+      "name": "qslv.kafka-producer-properties-path",
+      "type": "java.lang.String",
+      "sourceType": "qslv.itest.ConfigProperties"
+    },
+    {
+      "name": "qslv.kafka-transaction-reply-queue",
+      "type": "java.lang.String",
+      "sourceType": "qslv.itest.ConfigProperties"
+    },
+    {
+      "name": "qslv.kafka-transaction-request-queue",
+      "type": "java.lang.String",
+      "sourceType": "qslv.itest.ConfigProperties"
+    },
+    {
+      "name": "qslv.kafka-transfer-fulfillment-dead-letter-queue",
+      "type": "java.lang.String",
+      "sourceType": "qslv.itest.ConfigProperties"
+    },
+    {
+      "name": "qslv.kafka-transfer-reply-queue",
+      "type": "java.lang.String",
+      "sourceType": "qslv.itest.ConfigProperties"
+    },
+    {
+      "name": "qslv.kafka-transfer-request-queue",
+      "type": "java.lang.String",
+      "sourceType": "qslv.itest.ConfigProperties"
+    },
+    {
+      "name": "qslv.reservation-url",
+      "type": "java.lang.String",
+      "sourceType": "qslv.itest.ConfigProperties"
+    },
+    {
+      "name": "qslv.reserve-funds-url",
+      "type": "java.lang.String",
+      "sourceType": "qslv.itest.ConfigProperties"
+    },
+    {
+      "name": "qslv.rest-attempts",
+      "type": "java.lang.Integer",
+      "sourceType": "qslv.itest.ConfigProperties"
+    },
+    {
+      "name": "qslv.rest-backoff-delay",
+      "type": "java.lang.Integer",
+      "sourceType": "qslv.itest.ConfigProperties"
+    },
+    {
+      "name": "qslv.rest-backoff-delay-max",
+      "type": "java.lang.Integer",
+      "sourceType": "qslv.itest.ConfigProperties"
+    },
+    {
+      "name": "qslv.rest-connect-timeout",
+      "type": "java.lang.Integer",
+      "sourceType": "qslv.itest.ConfigProperties"
+    },
+    {
+      "name": "qslv.rest-connection-request-timeout",
+      "type": "java.lang.Integer",
+      "sourceType": "qslv.itest.ConfigProperties"
+    },
+    {
+      "name": "qslv.rest-timeout",
+      "type": "java.lang.Integer",
+      "sourceType": "qslv.itest.ConfigProperties"
+    },
+    {
+      "name": "qslv.transaction-url",
+      "type": "java.lang.String",
+      "sourceType": "qslv.itest.ConfigProperties"
+    },
+    {
+      "name": "qslv.transfer-and-transact-url",
+      "type": "java.lang.String",
+      "sourceType": "qslv.itest.ConfigProperties"
+    },
+    {
+      "name": "qslv.transfer-funds-url",
+      "type": "java.lang.String",
+      "sourceType": "qslv.itest.ConfigProperties"
+    }
+  ],
+  "hints": []
+}
