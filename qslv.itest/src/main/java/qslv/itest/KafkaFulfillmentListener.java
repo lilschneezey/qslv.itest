@@ -21,74 +21,62 @@ import qslv.transaction.response.TransactionResponse;
 public class KafkaFulfillmentListener {
 	private static final Logger log = LoggerFactory.getLogger(KafkaFulfillmentListener.class);
 
-	private boolean cancelListening = false;
-	private boolean commitListening = false;
-	private boolean transactionListening = false;
+	@Autowired
+	ArrayBlockingQueue<TraceableMessage<ResponseMessage<CancelReservationRequest, CancelReservationResponse>>> cancelExchangeQueue;
+	@Autowired
+	ArrayBlockingQueue<TraceableMessage<ResponseMessage<CommitReservationRequest, CommitReservationResponse>>> commitExchangeQueue;
+	@Autowired
+	ArrayBlockingQueue<TraceableMessage<ResponseMessage<TransactionRequest, TransactionResponse>>> transactionExchangeQueue;
 
-	public void setCancelListening(boolean cancelListening) {
-		this.cancelListening = cancelListening;
+	public void drain(ArrayBlockingQueue<?> queue) {
+		queue.clear();
 	}
 
-	public void setCommitListening(boolean commitListening) {
-		this.commitListening = commitListening;
+	public void drainAll() {
+		cancelExchangeQueue.clear();
+		commitExchangeQueue.clear();
+		transactionExchangeQueue.clear();
 	}
 
-	public void setTransactionListening(boolean transactionListening) {
-		this.transactionListening = transactionListening;
-	}
-
-	@Autowired
-	ArrayBlockingQueue<TraceableMessage<ResponseMessage<CancelReservationRequest,CancelReservationResponse>>> cancelExchangeQueue;
-	@Autowired
-	ArrayBlockingQueue<TraceableMessage<ResponseMessage<CommitReservationRequest,CommitReservationResponse>>> commitExchangeQueue;
-	@Autowired
-	ArrayBlockingQueue<TraceableMessage<ResponseMessage<TransactionRequest,TransactionResponse>>> transactionExchangeQueue;
-	
-	@KafkaListener(containerFactory = "cancelReservationListenerContainerFactory", topics = { "cancel.fulfillment.reply.queue" }, groupId="foo")
-	public void cancelListen(@Payload TraceableMessage<ResponseMessage<CancelReservationRequest,CancelReservationResponse>> message) {
+	@KafkaListener(containerFactory = "cancelReservationListenerContainerFactory", topics = {
+			"cancel.fulfillment.reply.queue" }, groupId = "foo")
+	public void cancelListen(
+			@Payload TraceableMessage<ResponseMessage<CancelReservationRequest, CancelReservationResponse>> message) {
 		log.debug("cancelListen ENTRY");
-		if (cancelListening) {
-			//@SuppressWarnings("unchecked")
-			//TraceableMessage<TransferFulfillmentMessage> message = (TraceableMessage<TransferFulfillmentMessage>)data.value();
-			try {
-				cancelExchangeQueue.put(message);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				log.debug(e.getLocalizedMessage());
-			}
-			log.debug("cancelListen EXIT");
+		try {
+			cancelExchangeQueue.put(message);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			log.debug(e.getLocalizedMessage());
 		}
+		log.debug("cancelListen EXIT");
 	}
-	
-	@KafkaListener(containerFactory = "commitReservationListenerContainerFactory", topics = { "commit.fulfillment.reply.queue" }, groupId="foo")
-	public void commitListen(@Payload TraceableMessage<ResponseMessage<CommitReservationRequest,CommitReservationResponse>> message) {
+
+	@KafkaListener(containerFactory = "commitReservationListenerContainerFactory", topics = {
+			"commit.fulfillment.reply.queue" }, groupId = "foo")
+	public void commitListen(
+			@Payload TraceableMessage<ResponseMessage<CommitReservationRequest, CommitReservationResponse>> message) {
 		log.debug("commitListen ENTRY");
-		if (commitListening) {
-			//@SuppressWarnings("unchecked")
-			//TraceableMessage<TransferFulfillmentMessage> message = (TraceableMessage<TransferFulfillmentMessage>)data.value();
-			try {
-				commitExchangeQueue.put(message);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				log.debug(e.getLocalizedMessage());
-			}
-			log.debug("onMessage EXIT");
+		try {
+			commitExchangeQueue.put(message);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			log.debug(e.getLocalizedMessage());
 		}
+		log.debug("onMessage EXIT");
 	}
-	
-	@KafkaListener(containerFactory = "transactionListenerContainerFactory", topics = { "transaction.fulfillment.reply.queue" }, groupId="foo")
-	public void transactionListen(@Payload TraceableMessage<ResponseMessage<TransactionRequest,TransactionResponse>> message) {
+
+	@KafkaListener(containerFactory = "transactionListenerContainerFactory", topics = {
+			"transaction.fulfillment.reply.queue" }, groupId = "foo")
+	public void transactionListen(
+			@Payload TraceableMessage<ResponseMessage<TransactionRequest, TransactionResponse>> message) {
 		log.debug("transactionListen ENTRY");
-		if (transactionListening) {
-			//@SuppressWarnings("unchecked")
-			//TraceableMessage<TransferFulfillmentMessage> message = (TraceableMessage<TransferFulfillmentMessage>)data.value();
-			try {
-				transactionExchangeQueue.put(message);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				log.debug(e.getLocalizedMessage());
-			}
-			log.debug("onMessage EXIT");
+		try {
+			transactionExchangeQueue.put(message);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			log.debug(e.getLocalizedMessage());
 		}
+		log.debug("onMessage EXIT");
 	}
 }

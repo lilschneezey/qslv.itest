@@ -47,6 +47,8 @@ class Itest_CommitFulfillment {
 	
 	@Test
 	void testCommitFulfillment_success() throws Exception {
+		commitExchangeQueue.clear();
+		
 		long start_from_amount = 9999L;
 		long reservation_amount = -8888L;
 		long commit_amount = -9111;
@@ -69,7 +71,6 @@ class Itest_CommitFulfillment {
 		reservationRequest.setTransactionMetaDataJson(JSON_DATA);
 		
 		// - execute Reservation  ------------------
-		kafkaFulfillmentListener.setCommitListening(true);
 		ReservationResponse reservationResponse = transactionDao.postReservation(headerMap, reservationRequest);
 	
 		long dbBalance = jdbcDao.selectBalance(TEST_ACCOUNT);
@@ -92,11 +93,9 @@ class Itest_CommitFulfillment {
 		traceable.setMessageCreationTime(LocalDateTime.now());
 		
 		// - Execute
-		kafkaFulfillmentListener.setCommitListening(true);
 		kafkaProducerDao.produceCommitMessage(traceable);
 		TraceableMessage<ResponseMessage<CommitReservationRequest,CommitReservationResponse>>
 			response = commitExchangeQueue.take();
-		kafkaFulfillmentListener.setCommitListening(false);
 
 		// - Verify
 		assertNotNull( response );
@@ -135,6 +134,8 @@ class Itest_CommitFulfillment {
 	
 	@Test
 	void test_transferFulfillemnt_noCommitReservation() throws InterruptedException {
+		commitExchangeQueue.clear();
+		
 		// - setup  -------------------
 		UUID commitUUID = UUID.randomUUID();
 		CommitReservationRequest request = new CommitReservationRequest();
@@ -151,17 +152,17 @@ class Itest_CommitFulfillment {
 		traceable.setMessageCreationTime(LocalDateTime.now());
 		
 		// - Execute
-		kafkaFulfillmentListener.setCommitListening(true);
 		kafkaProducerDao.produceCommitMessage(traceable);
 		TraceableMessage<ResponseMessage<CommitReservationRequest,CommitReservationResponse>>
 			response = commitExchangeQueue.take();
-		kafkaFulfillmentListener.setCommitListening(false);
 
 		assertEquals( ResponseMessage.INTERNAL_ERROR, response.getPayload().getStatus() );
 	}
 	
 	@Test
 	void test_transferFulfillemnt_malformed_requestUUID() throws InterruptedException {
+		commitExchangeQueue.clear();
+		
 		// - setup  -------------------
 		UUID commitUUID = UUID.randomUUID();
 		CommitReservationRequest request = new CommitReservationRequest();
@@ -178,18 +179,18 @@ class Itest_CommitFulfillment {
 		traceable.setMessageCreationTime(LocalDateTime.now());
 		
 		// - Execute
-		kafkaFulfillmentListener.setCommitListening(true);
 		kafkaProducerDao.produceCommitMessage(traceable);
 		TraceableMessage<ResponseMessage<CommitReservationRequest,CommitReservationResponse>>
 			response = commitExchangeQueue.take();
-		kafkaFulfillmentListener.setCommitListening(false);
 
 		assertEquals( ResponseMessage.MALFORMED_MESSAGE, response.getPayload().getStatus() );
-		assertTrue( response.getPayload().getMessage().contains("Missing From Request UUID"));
+		assertTrue( response.getPayload().getErrorMessage().contains("Missing From Request UUID"));
 	}
 	
 	@Test
 	void test_transferFulfillemnt_malformed_reservationUUID() throws InterruptedException {
+		commitExchangeQueue.clear();
+		
 		// - setup  -------------------
 		UUID commitUUID = UUID.randomUUID();
 		CommitReservationRequest request = new CommitReservationRequest();
@@ -206,18 +207,18 @@ class Itest_CommitFulfillment {
 		traceable.setMessageCreationTime(LocalDateTime.now());
 		
 		// - Execute
-		kafkaFulfillmentListener.setCommitListening(true);
 		kafkaProducerDao.produceCommitMessage(traceable);
 		TraceableMessage<ResponseMessage<CommitReservationRequest,CommitReservationResponse>>
 			response = commitExchangeQueue.take();
-		kafkaFulfillmentListener.setCommitListening(false);
 
 		assertEquals( ResponseMessage.MALFORMED_MESSAGE, response.getPayload().getStatus() );
-		assertTrue( response.getPayload().getMessage().contains("Missing From Reservation UUID"));
+		assertTrue( response.getPayload().getErrorMessage().contains("Missing From Reservation UUID"));
 	}
 	
 	@Test
 	void test_transferFulfillemnt_malformed_jsonMeta() throws InterruptedException {
+		commitExchangeQueue.clear();
+		
 		// - setup  -------------------
 		UUID commitUUID = UUID.randomUUID();
 		CommitReservationRequest request = new CommitReservationRequest();
@@ -234,18 +235,18 @@ class Itest_CommitFulfillment {
 		traceable.setMessageCreationTime(LocalDateTime.now());
 		
 		// - Execute
-		kafkaFulfillmentListener.setCommitListening(true);
 		kafkaProducerDao.produceCommitMessage(traceable);
 		TraceableMessage<ResponseMessage<CommitReservationRequest,CommitReservationResponse>>
 			response = commitExchangeQueue.take();
-		kafkaFulfillmentListener.setCommitListening(false);
 
 		assertEquals( ResponseMessage.MALFORMED_MESSAGE, response.getPayload().getStatus() );
-		assertTrue( response.getPayload().getMessage().contains("Missing Meta Data"));
+		assertTrue( response.getPayload().getErrorMessage().contains("Missing Meta Data"));
 	}
 	
 	@Test
 	void test_transferFulfillemnt_malformed_missing_payload() throws InterruptedException {
+		commitExchangeQueue.clear();
+		
 		// - setup  -------------------
 		UUID commitUUID = UUID.randomUUID();
 		CommitReservationRequest request = new CommitReservationRequest();
@@ -262,18 +263,18 @@ class Itest_CommitFulfillment {
 		traceable.setMessageCreationTime(LocalDateTime.now());
 		
 		// - Execute
-		kafkaFulfillmentListener.setCommitListening(true);
 		kafkaProducerDao.produceCommitMessage(traceable);
 		TraceableMessage<ResponseMessage<CommitReservationRequest,CommitReservationResponse>>
 			response = commitExchangeQueue.take();
-		kafkaFulfillmentListener.setCommitListening(false);
 
 		assertEquals( ResponseMessage.MALFORMED_MESSAGE, response.getPayload().getStatus() );
-		assertTrue( response.getPayload().getMessage().contains("Missing Fulfillment Message"));
+		assertTrue( response.getPayload().getErrorMessage().contains("Missing Fulfillment Message"));
 	}
 	
 	@Test
 	void test_transferFulfillemnt_malformed_missing_ait() throws InterruptedException {
+		commitExchangeQueue.clear();
+		
 		// - setup  -------------------
 		UUID commitUUID = UUID.randomUUID();
 		CommitReservationRequest request = new CommitReservationRequest();
@@ -290,18 +291,18 @@ class Itest_CommitFulfillment {
 		traceable.setMessageCreationTime(LocalDateTime.now());
 		
 		// - Execute
-		kafkaFulfillmentListener.setCommitListening(true);
 		kafkaProducerDao.produceCommitMessage(traceable);
 		TraceableMessage<ResponseMessage<CommitReservationRequest,CommitReservationResponse>>
 			response = commitExchangeQueue.take();
-		kafkaFulfillmentListener.setCommitListening(false);
 
 		assertEquals( ResponseMessage.MALFORMED_MESSAGE, response.getPayload().getStatus() );
-		assertTrue( response.getPayload().getMessage().contains("Missing Producer AIT Id"));
+		assertTrue( response.getPayload().getErrorMessage().contains("Missing Producer AIT Id"));
 	}
 	
 	@Test
 	void test_transferFulfillemnt_malformed_missing_correlation() throws InterruptedException {
+		commitExchangeQueue.clear();
+		
 		// - setup  -------------------
 		UUID commitUUID = UUID.randomUUID();
 		CommitReservationRequest request = new CommitReservationRequest();
@@ -318,18 +319,18 @@ class Itest_CommitFulfillment {
 		traceable.setMessageCreationTime(LocalDateTime.now());
 		
 		// - Execute
-		kafkaFulfillmentListener.setCommitListening(true);
 		kafkaProducerDao.produceCommitMessage(traceable);
 		TraceableMessage<ResponseMessage<CommitReservationRequest,CommitReservationResponse>>
 			response = commitExchangeQueue.take();
-		kafkaFulfillmentListener.setCommitListening(false);
 
 		assertEquals( ResponseMessage.MALFORMED_MESSAGE, response.getPayload().getStatus() );
-		assertTrue( response.getPayload().getMessage().contains("Missing Correlation Id"));
+		assertTrue( response.getPayload().getErrorMessage().contains("Missing Correlation Id"));
 	}
 	
 	@Test
 	void test_transferFulfillemnt_malformed_missing_taxonomy() throws InterruptedException {
+		commitExchangeQueue.clear();
+		
 		// - setup  -------------------
 		UUID commitUUID = UUID.randomUUID();
 		CommitReservationRequest request = new CommitReservationRequest();
@@ -346,18 +347,18 @@ class Itest_CommitFulfillment {
 		traceable.setMessageCreationTime(LocalDateTime.now());
 		
 		// - Execute
-		kafkaFulfillmentListener.setCommitListening(true);
 		kafkaProducerDao.produceCommitMessage(traceable);
 		TraceableMessage<ResponseMessage<CommitReservationRequest,CommitReservationResponse>>
 			response = commitExchangeQueue.take();
-		kafkaFulfillmentListener.setCommitListening(false);
 
 		assertEquals( ResponseMessage.MALFORMED_MESSAGE, response.getPayload().getStatus() );
-		assertTrue( response.getPayload().getMessage().contains("Missing Business Taxonomy Id"));
+		assertTrue( response.getPayload().getErrorMessage().contains("Missing Business Taxonomy Id"));
 	}
 	
 	@Test
 	void test_transferFulfillemnt_malformed_missing_createdTime() throws InterruptedException {
+		commitExchangeQueue.clear();
+		
 		// - setup  -------------------
 		UUID commitUUID = UUID.randomUUID();
 		CommitReservationRequest request = new CommitReservationRequest();
@@ -374,14 +375,12 @@ class Itest_CommitFulfillment {
 		traceable.setMessageCreationTime(null);
 		
 		// - Execute
-		kafkaFulfillmentListener.setCommitListening(true);
 		kafkaProducerDao.produceCommitMessage(traceable);
 		TraceableMessage<ResponseMessage<CommitReservationRequest,CommitReservationResponse>>
 			response = commitExchangeQueue.take();
-		kafkaFulfillmentListener.setCommitListening(false);
 
 		assertEquals( ResponseMessage.MALFORMED_MESSAGE, response.getPayload().getStatus() );
-		assertTrue( response.getPayload().getMessage().contains("Missing Message Creation Time"));
+		assertTrue( response.getPayload().getErrorMessage().contains("Missing Message Creation Time"));
 	}
 	
 	private HashMap<String, String> setup_header() {

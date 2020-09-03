@@ -43,6 +43,8 @@ class Itest_TransactionFulfillment {
 	
 	@Test
 	void testCancelFulfillment_success() throws Exception {
+		transactionExchangeQueue.clear();
+		
 		long start_from_amount = 9999L;
 		long transaction_amount = -8888L;
 		long expected_balance = start_from_amount + transaction_amount;
@@ -67,11 +69,9 @@ class Itest_TransactionFulfillment {
 		traceable.setMessageCreationTime(LocalDateTime.now());
 
 		// - Execute
-		kafkaFulfillmentListener.setTransactionListening(true);
 		kafkaProducerDao.produceTransactionMessage(traceable);
 		TraceableMessage<ResponseMessage<TransactionRequest,TransactionResponse>>
 			response = transactionExchangeQueue.take();
-		kafkaFulfillmentListener.setTransactionListening(false);
 
 		// - Verify
 		assertNotNull( response );
@@ -112,6 +112,8 @@ class Itest_TransactionFulfillment {
 	
 	@Test
 	void test_transferFulfillemnt_malformed_requestUUID() throws InterruptedException {
+		transactionExchangeQueue.clear();
+		
 		// - setup  -------------------
 		TransactionRequest request = new TransactionRequest();
 		request.setAccountNumber(TEST_ACCOUNT);
@@ -127,18 +129,18 @@ class Itest_TransactionFulfillment {
 		traceable.setMessageCreationTime(LocalDateTime.now());
 		
 		// - Execute
-		kafkaFulfillmentListener.setTransactionListening(true);
 		kafkaProducerDao.produceTransactionMessage(traceable);
 		TraceableMessage<ResponseMessage<TransactionRequest,TransactionResponse>>
 			response = transactionExchangeQueue.take();
-		kafkaFulfillmentListener.setTransactionListening(false);
 
 		assertEquals( ResponseMessage.MALFORMED_MESSAGE, response.getPayload().getStatus() );
-		assertTrue( response.getPayload().getMessage().contains("Missing From Request UUID"));
+		assertTrue( response.getPayload().getErrorMessage().contains("Missing From Request UUID"));
 	}
 	
 	@Test
 	void test_transferFulfillemnt_malformed_jsonMeta() throws InterruptedException {
+		transactionExchangeQueue.clear();
+		
 		// - setup  -------------------
 		UUID transactionUUID = UUID.randomUUID();
 		TransactionRequest request = new TransactionRequest();
@@ -155,18 +157,18 @@ class Itest_TransactionFulfillment {
 		traceable.setMessageCreationTime(LocalDateTime.now());
 		
 		// - Execute
-		kafkaFulfillmentListener.setTransactionListening(true);
 		kafkaProducerDao.produceTransactionMessage(traceable);
 		TraceableMessage<ResponseMessage<TransactionRequest,TransactionResponse>>
 			response = transactionExchangeQueue.take();
-		kafkaFulfillmentListener.setTransactionListening(false);
 
 		assertEquals( ResponseMessage.MALFORMED_MESSAGE, response.getPayload().getStatus() );
-		assertTrue( response.getPayload().getMessage().contains("Missing Meta Data"));
+		assertTrue( response.getPayload().getErrorMessage().contains("Missing Meta Data"));
 	}
 	
 	@Test
 	void test_transferFulfillemnt_malformed_amountZero() throws InterruptedException {
+		transactionExchangeQueue.clear();
+		
 		// - setup  -------------------
 		UUID transactionUUID = UUID.randomUUID();
 		TransactionRequest request = new TransactionRequest();
@@ -183,18 +185,18 @@ class Itest_TransactionFulfillment {
 		traceable.setMessageCreationTime(LocalDateTime.now());
 		
 		// - Execute
-		kafkaFulfillmentListener.setTransactionListening(true);
 		kafkaProducerDao.produceTransactionMessage(traceable);
 		TraceableMessage<ResponseMessage<TransactionRequest,TransactionResponse>>
 			response = transactionExchangeQueue.take();
-		kafkaFulfillmentListener.setTransactionListening(false);
 
 		assertEquals( ResponseMessage.MALFORMED_MESSAGE, response.getPayload().getStatus() );
-		assertTrue( response.getPayload().getMessage().contains("Transaction Amount must not be zero"));
+		assertTrue( response.getPayload().getErrorMessage().contains("Transaction Amount must not be zero"));
 	}
 
 	@Test
 	void test_transferFulfillemnt_malformed_missing_payload() throws InterruptedException {
+		transactionExchangeQueue.clear();
+		
 		// - setup  -------------------
 		UUID transactionUUID = UUID.randomUUID();
 		TransactionRequest request = new TransactionRequest();
@@ -211,18 +213,18 @@ class Itest_TransactionFulfillment {
 		traceable.setMessageCreationTime(LocalDateTime.now());
 		
 		// - Execute
-		kafkaFulfillmentListener.setTransactionListening(true);
 		kafkaProducerDao.produceTransactionMessage(traceable);
 		TraceableMessage<ResponseMessage<TransactionRequest,TransactionResponse>>
 			response = transactionExchangeQueue.take();
-		kafkaFulfillmentListener.setTransactionListening(false);
 
 		assertEquals( ResponseMessage.MALFORMED_MESSAGE, response.getPayload().getStatus() );
-		assertTrue( response.getPayload().getMessage().contains("Missing Fulfillment Message"));
+		assertTrue( response.getPayload().getErrorMessage().contains("Missing Fulfillment Message"));
 	}
 	
 	@Test
 	void test_transferFulfillemnt_malformed_missing_ait() throws InterruptedException {
+		transactionExchangeQueue.clear();
+		
 		// - setup  -------------------
 		UUID transactionUUID = UUID.randomUUID();
 		TransactionRequest request = new TransactionRequest();
@@ -239,18 +241,18 @@ class Itest_TransactionFulfillment {
 		traceable.setMessageCreationTime(LocalDateTime.now());
 		
 		// - Execute
-		kafkaFulfillmentListener.setTransactionListening(true);
 		kafkaProducerDao.produceTransactionMessage(traceable);
 		TraceableMessage<ResponseMessage<TransactionRequest,TransactionResponse>>
 			response = transactionExchangeQueue.take();
-		kafkaFulfillmentListener.setTransactionListening(false);
 
 		assertEquals( ResponseMessage.MALFORMED_MESSAGE, response.getPayload().getStatus() );
-		assertTrue( response.getPayload().getMessage().contains("Missing Producer AIT Id"));
+		assertTrue( response.getPayload().getErrorMessage().contains("Missing Producer AIT Id"));
 	}
 	
 	@Test
 	void test_transferFulfillemnt_malformed_missing_correlation() throws InterruptedException {
+		transactionExchangeQueue.clear();
+		
 		// - setup  -------------------
 		UUID transactionUUID = UUID.randomUUID();
 		TransactionRequest request = new TransactionRequest();
@@ -267,18 +269,18 @@ class Itest_TransactionFulfillment {
 		traceable.setMessageCreationTime(LocalDateTime.now());
 		
 		// - Execute
-		kafkaFulfillmentListener.setTransactionListening(true);
 		kafkaProducerDao.produceTransactionMessage(traceable);
 		TraceableMessage<ResponseMessage<TransactionRequest,TransactionResponse>>
 			response = transactionExchangeQueue.take();
-		kafkaFulfillmentListener.setTransactionListening(false);
 
 		assertEquals( ResponseMessage.MALFORMED_MESSAGE, response.getPayload().getStatus() );
-		assertTrue( response.getPayload().getMessage().contains("Missing Correlation Id"));
+		assertTrue( response.getPayload().getErrorMessage().contains("Missing Correlation Id"));
 	}
 	
 	@Test
 	void test_transferFulfillemnt_malformed_missing_taxonomy() throws InterruptedException {
+		transactionExchangeQueue.clear();
+		
 		// - setup  -------------------
 		UUID transactionUUID = UUID.randomUUID();
 		TransactionRequest request = new TransactionRequest();
@@ -295,18 +297,18 @@ class Itest_TransactionFulfillment {
 		traceable.setMessageCreationTime(LocalDateTime.now());
 		
 		// - Execute
-		kafkaFulfillmentListener.setTransactionListening(true);
 		kafkaProducerDao.produceTransactionMessage(traceable);
 		TraceableMessage<ResponseMessage<TransactionRequest,TransactionResponse>>
 			response = transactionExchangeQueue.take();
-		kafkaFulfillmentListener.setTransactionListening(false);
 
 		assertEquals( ResponseMessage.MALFORMED_MESSAGE, response.getPayload().getStatus() );
-		assertTrue( response.getPayload().getMessage().contains("Missing Business Taxonomy Id"));
+		assertTrue( response.getPayload().getErrorMessage().contains("Missing Business Taxonomy Id"));
 	}
 
 	@Test
 	void test_transferFulfillemnt_malformed_missing_createdTime() throws InterruptedException {
+		transactionExchangeQueue.clear();
+		
 		// - setup  -------------------
 		UUID transactionUUID = UUID.randomUUID();
 		TransactionRequest request = new TransactionRequest();
@@ -323,14 +325,12 @@ class Itest_TransactionFulfillment {
 		traceable.setMessageCreationTime(null);
 		
 		// - Execute
-		kafkaFulfillmentListener.setTransactionListening(true);
 		kafkaProducerDao.produceTransactionMessage(traceable);
 		TraceableMessage<ResponseMessage<TransactionRequest,TransactionResponse>>
 			response = transactionExchangeQueue.take();
-		kafkaFulfillmentListener.setTransactionListening(false);
 
 		assertEquals( ResponseMessage.MALFORMED_MESSAGE, response.getPayload().getStatus() );
-		assertTrue( response.getPayload().getMessage().contains("Missing Message Creation Time"));
+		assertTrue( response.getPayload().getErrorMessage().contains("Missing Message Creation Time"));
 	}
 
 

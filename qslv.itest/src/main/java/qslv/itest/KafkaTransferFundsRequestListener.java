@@ -14,35 +14,32 @@ import qslv.transfer.request.TransferFulfillmentMessage;
 public class KafkaTransferFundsRequestListener {
 	private static final Logger log = LoggerFactory.getLogger(KafkaTransferFundsRequestListener.class);
 
-	private boolean listening = false;
-	
-	public void setListening(boolean listening) {
-		this.listening = listening;
+	public void drain(ArrayBlockingQueue<?> queue) {
+		queue.clear();
+	}
+
+	public void drainAll() {
+		transferFundsRequestexchangeQueue.clear();
 	}
 
 	@Autowired
 	ArrayBlockingQueue<TransferFulfillmentMessage> transferFundsRequestexchangeQueue;
-	
-	@KafkaListener(topics = { "online.transfer.requests" }, groupId="foo")
+
+	@KafkaListener(topics = { "online.transfer.requests" }, groupId = "foo")
 	public void listen(@Payload TraceableMessage<TransferFulfillmentMessage> message) {
-		if (listening) {
-			log.debug("onMessage ENTRY");
-			//@SuppressWarnings("unchecked")
-			//TraceableMessage<TransferFulfillmentMessage> message = (TraceableMessage<TransferFulfillmentMessage>)data.value();
-			try {
-				transferFundsRequestexchangeQueue.put(message.getPayload());
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				log.debug(e.getLocalizedMessage());
-			}
-			log.debug("{} From {} To {} Amount {} Reservation {}", 
-					message.getPayload().getRequestUuid(),  
-					message.getPayload().getFromAccountNumber(),
-					message.getPayload().getToAccountNumber(),
-					message.getPayload().getTransactionAmount(),
-					message.getPayload().getReservationUuid()
-			);
-			log.debug("onMessage EXIT");
+		log.debug("onMessage ENTRY");
+		// @SuppressWarnings("unchecked")
+		// TraceableMessage<TransferFulfillmentMessage> message =
+		// (TraceableMessage<TransferFulfillmentMessage>)data.value();
+		try {
+			transferFundsRequestexchangeQueue.put(message.getPayload());
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			log.debug(e.getLocalizedMessage());
 		}
+		log.debug("{} From {} To {} Amount {} Reservation {}", message.getPayload().getRequestUuid(),
+				message.getPayload().getFromAccountNumber(), message.getPayload().getToAccountNumber(),
+				message.getPayload().getTransactionAmount(), message.getPayload().getReservationUuid());
+		log.debug("onMessage EXIT");
 	}
 }

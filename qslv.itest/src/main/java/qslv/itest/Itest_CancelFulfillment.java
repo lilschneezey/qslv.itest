@@ -53,6 +53,8 @@ class Itest_CancelFulfillment {
 		UUID requestUuid = UUID.randomUUID();
 		
 		// - setup --------------------
+		cancelExchangeQueue.clear();
+		
 		jdbcDao.setupAccountBalance(TEST_ACCOUNT, start_from_amount);
 		jdbcDao.setupAccount(TEST_ACCOUNT, VALID_STATUS);
 		
@@ -67,7 +69,6 @@ class Itest_CancelFulfillment {
 		reservationRequest.setTransactionMetaDataJson(JSON_DATA);
 		
 		// - execute Reservation  ------------------
-		kafkaFulfillmentListener.setCancelListening(true);
 		ReservationResponse reservationResponse = transactionDao.postReservation(headerMap, reservationRequest);
 	
 		long dbBalance = jdbcDao.selectBalance(TEST_ACCOUNT);
@@ -89,11 +90,9 @@ class Itest_CancelFulfillment {
 		traceable.setMessageCreationTime(LocalDateTime.now());
 		
 		// - Execute
-		kafkaFulfillmentListener.setCancelListening(true);
 		kafkaProducerDao.produceCancelMessage(traceable);
 		TraceableMessage<ResponseMessage<CancelReservationRequest,CancelReservationResponse>>
 			response = cancelExchangeQueue.take();
-		kafkaFulfillmentListener.setCancelListening(false);
 
 		// - Verify
 		assertNotNull( response );
@@ -131,6 +130,8 @@ class Itest_CancelFulfillment {
 	
 	@Test
 	void test_transferFulfillemnt_noCommitReservation() throws InterruptedException {
+		cancelExchangeQueue.clear();
+
 		// - setup  -------------------
 		UUID cancelUUID = UUID.randomUUID();
 		CancelReservationRequest request = new CancelReservationRequest();
@@ -147,11 +148,9 @@ class Itest_CancelFulfillment {
 		traceable.setMessageCreationTime(LocalDateTime.now());
 		
 		// - Execute
-		kafkaFulfillmentListener.setCancelListening(true);
 		kafkaProducerDao.produceCancelMessage(traceable);
 		TraceableMessage<ResponseMessage<CancelReservationRequest,CancelReservationResponse>>
 			response = cancelExchangeQueue.take();
-		kafkaFulfillmentListener.setCancelListening(false);
 
 		assertEquals( ResponseMessage.INTERNAL_ERROR, response.getPayload().getStatus() );
 	}
@@ -174,18 +173,18 @@ class Itest_CancelFulfillment {
 		traceable.setMessageCreationTime(LocalDateTime.now());
 		
 		// - Execute
-		kafkaFulfillmentListener.setCancelListening(true);
 		kafkaProducerDao.produceCancelMessage(traceable);
 		TraceableMessage<ResponseMessage<CancelReservationRequest,CancelReservationResponse>>
 			response = cancelExchangeQueue.take();
-		kafkaFulfillmentListener.setCancelListening(false);
 
 		assertEquals( ResponseMessage.MALFORMED_MESSAGE, response.getPayload().getStatus() );
-		assertTrue( response.getPayload().getMessage().contains("Missing From Request UUID"));
+		assertTrue( response.getPayload().getErrorMessage().contains("Missing From Request UUID"));
 	}
 	
 	@Test
 	void test_transferFulfillemnt_malformed_reservationUUID() throws InterruptedException {
+		cancelExchangeQueue.clear();
+
 		// - setup  -------------------
 		UUID cancelUUID = UUID.randomUUID();
 		CancelReservationRequest request = new CancelReservationRequest();
@@ -202,18 +201,18 @@ class Itest_CancelFulfillment {
 		traceable.setMessageCreationTime(LocalDateTime.now());
 		
 		// - Execute
-		kafkaFulfillmentListener.setCancelListening(true);
 		kafkaProducerDao.produceCancelMessage(traceable);
 		TraceableMessage<ResponseMessage<CancelReservationRequest,CancelReservationResponse>>
 			response = cancelExchangeQueue.take();
-		kafkaFulfillmentListener.setCancelListening(false);
 
 		assertEquals( ResponseMessage.MALFORMED_MESSAGE, response.getPayload().getStatus() );
-		assertTrue( response.getPayload().getMessage().contains("Missing From Reservation UUID"));
+		assertTrue( response.getPayload().getErrorMessage().contains("Missing From Reservation UUID"));
 	}
 	
 	@Test
 	void test_transferFulfillemnt_malformed_jsonMeta() throws InterruptedException {
+		cancelExchangeQueue.clear();
+
 		// - setup  -------------------
 		UUID cancelUUID = UUID.randomUUID();
 		CancelReservationRequest request = new CancelReservationRequest();
@@ -230,18 +229,18 @@ class Itest_CancelFulfillment {
 		traceable.setMessageCreationTime(LocalDateTime.now());
 		
 		// - Execute
-		kafkaFulfillmentListener.setCancelListening(true);
 		kafkaProducerDao.produceCancelMessage(traceable);
 		TraceableMessage<ResponseMessage<CancelReservationRequest,CancelReservationResponse>>
 			response = cancelExchangeQueue.take();
-		kafkaFulfillmentListener.setCancelListening(false);
 
 		assertEquals( ResponseMessage.MALFORMED_MESSAGE, response.getPayload().getStatus() );
-		assertTrue( response.getPayload().getMessage().contains("Missing Meta Data"));
+		assertTrue( response.getPayload().getErrorMessage().contains("Missing Meta Data"));
 	}
 	
 	@Test
 	void test_transferFulfillemnt_malformed_missing_payload() throws InterruptedException {
+		cancelExchangeQueue.clear();
+
 		// - setup  -------------------
 		UUID cancelUUID = UUID.randomUUID();
 		CancelReservationRequest request = new CancelReservationRequest();
@@ -258,18 +257,18 @@ class Itest_CancelFulfillment {
 		traceable.setMessageCreationTime(LocalDateTime.now());
 		
 		// - Execute
-		kafkaFulfillmentListener.setCancelListening(true);
 		kafkaProducerDao.produceCancelMessage(traceable);
 		TraceableMessage<ResponseMessage<CancelReservationRequest,CancelReservationResponse>>
 			response = cancelExchangeQueue.take();
-		kafkaFulfillmentListener.setCancelListening(false);
 
 		assertEquals( ResponseMessage.MALFORMED_MESSAGE, response.getPayload().getStatus() );
-		assertTrue( response.getPayload().getMessage().contains("Missing Fulfillment Message"));
+		assertTrue( response.getPayload().getErrorMessage().contains("Missing Fulfillment Message"));
 	}
 	
 	@Test
 	void test_transferFulfillemnt_malformed_missing_ait() throws InterruptedException {
+		cancelExchangeQueue.clear();
+
 		// - setup  -------------------
 		UUID cancelUUID = UUID.randomUUID();
 		CancelReservationRequest request = new CancelReservationRequest();
@@ -286,18 +285,18 @@ class Itest_CancelFulfillment {
 		traceable.setMessageCreationTime(LocalDateTime.now());
 		
 		// - Execute
-		kafkaFulfillmentListener.setCancelListening(true);
 		kafkaProducerDao.produceCancelMessage(traceable);
 		TraceableMessage<ResponseMessage<CancelReservationRequest,CancelReservationResponse>>
 			response = cancelExchangeQueue.take();
-		kafkaFulfillmentListener.setCancelListening(false);
 
 		assertEquals( ResponseMessage.MALFORMED_MESSAGE, response.getPayload().getStatus() );
-		assertTrue( response.getPayload().getMessage().contains("Missing Producer AIT Id"));
+		assertTrue( response.getPayload().getErrorMessage().contains("Missing Producer AIT Id"));
 	}
 	
 	@Test
 	void test_transferFulfillemnt_malformed_missing_correlation() throws InterruptedException {
+		cancelExchangeQueue.clear();
+
 		// - setup  -------------------
 		UUID cancelUUID = UUID.randomUUID();
 		CancelReservationRequest request = new CancelReservationRequest();
@@ -314,18 +313,18 @@ class Itest_CancelFulfillment {
 		traceable.setMessageCreationTime(LocalDateTime.now());
 		
 		// - Execute
-		kafkaFulfillmentListener.setCancelListening(true);
 		kafkaProducerDao.produceCancelMessage(traceable);
 		TraceableMessage<ResponseMessage<CancelReservationRequest,CancelReservationResponse>>
 			response = cancelExchangeQueue.take();
-		kafkaFulfillmentListener.setCancelListening(false);
 
 		assertEquals( ResponseMessage.MALFORMED_MESSAGE, response.getPayload().getStatus() );
-		assertTrue( response.getPayload().getMessage().contains("Missing Correlation Id"));
+		assertTrue( response.getPayload().getErrorMessage().contains("Missing Correlation Id"));
 	}
 	
 	@Test
 	void test_transferFulfillemnt_malformed_missing_taxonomy() throws InterruptedException {
+		cancelExchangeQueue.clear();
+
 		// - setup  -------------------
 		UUID cancelUUID = UUID.randomUUID();
 		CancelReservationRequest request = new CancelReservationRequest();
@@ -342,18 +341,18 @@ class Itest_CancelFulfillment {
 		traceable.setMessageCreationTime(LocalDateTime.now());
 		
 		// - Execute
-		kafkaFulfillmentListener.setCancelListening(true);
 		kafkaProducerDao.produceCancelMessage(traceable);
 		TraceableMessage<ResponseMessage<CancelReservationRequest,CancelReservationResponse>>
 			response = cancelExchangeQueue.take();
-		kafkaFulfillmentListener.setCancelListening(false);
 
 		assertEquals( ResponseMessage.MALFORMED_MESSAGE, response.getPayload().getStatus() );
-		assertTrue( response.getPayload().getMessage().contains("Missing Business Taxonomy Id"));
+		assertTrue( response.getPayload().getErrorMessage().contains("Missing Business Taxonomy Id"));
 	}
 	
 	@Test
 	void test_transferFulfillemnt_malformed_missing_createdTime() throws InterruptedException {
+		cancelExchangeQueue.clear();
+
 		// - setup  -------------------
 		UUID cancelUUID = UUID.randomUUID();
 		CancelReservationRequest request = new CancelReservationRequest();
@@ -370,14 +369,12 @@ class Itest_CancelFulfillment {
 		traceable.setMessageCreationTime(null);
 		
 		// - Execute
-		kafkaFulfillmentListener.setCancelListening(true);
 		kafkaProducerDao.produceCancelMessage(traceable);
 		TraceableMessage<ResponseMessage<CancelReservationRequest,CancelReservationResponse>>
 			response = cancelExchangeQueue.take();
-		kafkaFulfillmentListener.setCancelListening(false);
 
 		assertEquals( ResponseMessage.MALFORMED_MESSAGE, response.getPayload().getStatus() );
-		assertTrue( response.getPayload().getMessage().contains("Missing Message Creation Time"));
+		assertTrue( response.getPayload().getErrorMessage().contains("Missing Message Creation Time"));
 	}
 	
 	private HashMap<String, String> setup_header() {

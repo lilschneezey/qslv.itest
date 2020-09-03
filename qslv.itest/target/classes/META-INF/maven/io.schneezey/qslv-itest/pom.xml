@@ -9,7 +9,7 @@
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>io.schneezey</groupId>
-	<artifactId>qslv-kafka-test</artifactId>
+	<artifactId>qslv-itest</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>Transfer.Rest</name>
 	<description>Rest services for transfering funds.</description>

@@ -44,6 +44,8 @@ class Itest_TransOverDraftFulfillment {
 	
 	@Test
 	void testCancelFulfillment_nofunds() throws Exception {
+		transactionExchangeQueue.clear();
+		
 		long start_from_amount = 1111L;
 		long transaction_amount = -8888L;
 		
@@ -69,11 +71,9 @@ class Itest_TransOverDraftFulfillment {
 		traceable.setMessageCreationTime(LocalDateTime.now());
 
 		// - Execute
-		kafkaFulfillmentListener.setTransactionListening(true);
 		kafkaProducerDao.produceTransactionMessage(traceable);
 		TraceableMessage<ResponseMessage<TransactionRequest,TransactionResponse>>
 			response = transactionExchangeQueue.take();
-		kafkaFulfillmentListener.setTransactionListening(false);
 
 		// - Verify
 		assertNotNull( response );
@@ -113,6 +113,8 @@ class Itest_TransOverDraftFulfillment {
 	
 	@Test
 	void testCancelFulfillment_oneODsuccess() throws Exception {
+		transactionExchangeQueue.clear();
+		
 		long start_from_amount = 1111L;
 		long ample_money = 99999L;
 		long transaction_amount = -8888L;
@@ -146,11 +148,9 @@ class Itest_TransOverDraftFulfillment {
 		traceable.setMessageCreationTime(LocalDateTime.now());
 
 		// - Execute
-		kafkaFulfillmentListener.setTransactionListening(true);
 		kafkaProducerDao.produceTransactionMessage(traceable);
 		TraceableMessage<ResponseMessage<TransactionRequest,TransactionResponse>>
 			response = transactionExchangeQueue.take();
-		kafkaFulfillmentListener.setTransactionListening(false);
 
 		// - Verify
 		assertNotNull( response );
@@ -202,7 +202,7 @@ class Itest_TransOverDraftFulfillment {
 		
 		// transact
 		assertEquals( TEST_ACCOUNT, transact.getAccountNumber());
-		assertEquals( reservation.getTransactionUuid(), transact.getRequestUuid()); //ensure idempotency set up correctly
+		assertEquals( transfer.getTransactionUuid(), transact.getRequestUuid()); //ensure idempotency set up correctly
 		assertEquals( transaction_amount, transact.getTransactionAmount());
 		assertEquals( start_from_amount, transact.getRunningBalanceAmount());
 		assertEquals( TransactionResource.NORMAL, transact.getTransactionTypeCode());

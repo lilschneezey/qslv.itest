@@ -12,29 +12,28 @@ import org.springframework.stereotype.Component;
 public class KafkaTransferFundsDeadLetterListener {
 	private static final Logger log = LoggerFactory.getLogger(KafkaTransferFundsDeadLetterListener.class);
 
-	private boolean listening = false;
-	
-	public void setListening(boolean listening) {
-		this.listening = listening;
+	public void drain(ArrayBlockingQueue<?> queue) {
+		queue.clear();
+	}
+
+	public void drainAll() {
+		deadLetterExchangeQueue.clear();
 	}
 
 	@Autowired
 	ArrayBlockingQueue<String> deadLetterExchangeQueue;
-	
-	@KafkaListener(containerFactory = "deadLetterListenerContainerFactory", topics = { "dlq.transfer.requests" }, groupId="foo")
+
+	@KafkaListener(containerFactory = "deadLetterListenerContainerFactory", topics = {
+			"dlq.transfer.requests" }, groupId = "foo")
 	public void listen(@Payload String message) {
-		if (listening) {
-			log.debug("onMessage ENTRY");
-			//@SuppressWarnings("unchecked")
-			//TraceableMessage<TransferFulfillmentMessage> message = (TraceableMessage<TransferFulfillmentMessage>)data.value();
-			log.debug(message);
-			try {
-				deadLetterExchangeQueue.put(message);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				log.debug(e.getLocalizedMessage());
-			}
-			log.debug("onMessage EXIT");
+		log.debug("onMessage ENTRY");
+		log.debug(message);
+		try {
+			deadLetterExchangeQueue.put(message);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			log.debug(e.getLocalizedMessage());
 		}
+		log.debug("onMessage EXIT");
 	}
 }

@@ -43,6 +43,8 @@ class Itest_TransferFunds {
 	
 	@Test
 	void testTransferFunds_success() throws Exception {
+		exchangeQueue.clear();
+		
 		long start_from_amount = 9999L;
 		long start_to_amount = 4444L;
 		long transfer_amount = 8888L;
@@ -63,7 +65,6 @@ class Itest_TransferFunds {
 		request.setToAccountNumber(TEST_TO_ACCOUNT);
 		request.setTransactionAmount(transfer_amount);
 		request.setTransactionJsonMetaData(JSON_DATA);
-		kafkaTransferFundsRequestListener.setListening(true);
 		
 		// - execute ------------------
 		TransferFundsResponse response = transferFundsDao.transferFunds(headerMap, request);
@@ -127,12 +128,13 @@ class Itest_TransferFunds {
 		// Start Idempotency Check
 		//-----------------------
 		//TODO
-		kafkaTransferFundsRequestListener.setListening(false);
 	}
 
 
 	@Test
 	void testTransferFunds_fromAccount_status_failure() throws Exception {
+		exchangeQueue.clear();
+
 		long start_from_amount = 2348234L;
 		long start_to_amount = 783492374L;
 		long transfer_amount = 8888L;

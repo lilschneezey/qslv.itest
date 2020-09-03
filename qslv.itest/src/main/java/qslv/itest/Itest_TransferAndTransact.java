@@ -90,7 +90,7 @@ class Itest_TransferAndTransact {
 		assertEquals( TEST_ACCOUNT, transact.getAccountNumber());
 		assertEquals( DEBIT_ACCOUNT, transact.getDebitCardNumber());
 		assertEquals( metaDataJson, transact.getTransactionMetaDataJson());
-		assertEquals( requestUuid, transact.getRequestUuid());
+		assertEquals( transfer.getTransactionUuid(), transact.getRequestUuid());
 		assertEquals( TransactionResource.NORMAL, transact.getTransactionTypeCode() );
 
 		//verify database matches returned data

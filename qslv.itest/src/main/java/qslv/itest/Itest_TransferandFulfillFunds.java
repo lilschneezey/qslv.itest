@@ -50,6 +50,8 @@ class Itest_TransferandFulfillFunds {
 	
 	@Test
 	void testTransferFunds_success() throws Exception {
+		transferFundsRequestexchangeQueue.clear();
+		
 		long start_from_amount = 9999L;
 		long start_to_amount = 4444L;
 		long transfer_amount = 8888L;
@@ -73,7 +75,6 @@ class Itest_TransferandFulfillFunds {
 		request.setTransactionJsonMetaData(JSON_DATA);
 		
 		// - execute ------------------
-		kafkaTransferFundsRequestListener.setListening(true);
 		TransferFundsResponse response = transferFundsDao.transferFunds(headerMap, request);
 	
 		// - verify -------------------
@@ -87,7 +88,6 @@ class Itest_TransferandFulfillFunds {
 		// Kafka Queue Check
 		//-----------------------
 		TransferFulfillmentMessage kmessage = transferFundsRequestexchangeQueue.take();
-		kafkaTransferFundsRequestListener.setListening(false);
 		assertEquals(message.getFromAccountNumber(), kmessage.getFromAccountNumber());
 		assertEquals(message.getRequestUuid(), kmessage.getRequestUuid());
 		assertEquals(message.getReservationUuid(), kmessage.getReservationUuid());
@@ -95,7 +95,7 @@ class Itest_TransferandFulfillFunds {
 		assertEquals(message.getTransactionAmount(), kmessage.getTransactionAmount());
 		assertEquals(message.getTransactionMetaDataJson(), kmessage.getTransactionMetaDataJson());
 
-		Thread.sleep(2000L);
+		Thread.sleep(2000L); // this is a little lame, but need to wait for async fulfillment to complete
 		
 		long fromBalance = jdbcDao.selectBalance(TEST_FROM_ACCOUNT);
 		long toBalance = jdbcDao.selectBalance(TEST_TO_ACCOUNT);
@@ -155,10 +155,9 @@ class Itest_TransferandFulfillFunds {
 		//-----------------------
 		// Start Idempotency Check
 		//-----------------------
-		kafkaTransferFundsRequestListener.setListening(true);
+		deadLetterExchangeQueue.clear();
 		TransferFundsResponse iresponse = transferFundsDao.transferFunds(headerMap, request);
 		TransferFulfillmentMessage imessage = transferFundsRequestexchangeQueue.take();
-		kafkaTransferFundsRequestListener.setListening(false);
 
 		assertTransactionsEquals(response.getReservation(), iresponse.getReservation());
 		assertEquals(message.getFromAccountNumber(), imessage.getFromAccountNumber());
@@ -173,12 +172,17 @@ class Itest_TransferandFulfillFunds {
 		long itoBalance = jdbcDao.selectBalance(TEST_TO_ACCOUNT);
 
 		assertEquals(fromBalance, ifromBalance);
-		assertEquals(toBalance, itoBalance);		
+		assertEquals(toBalance, itoBalance);
+		
+		String deadLetter = deadLetterExchangeQueue.take();
+		assertTrue(deadLetter.contains("Conflict") && deadLetter.contains("has already been finalized"));
 	}
 
 	
 	@Test
 	void test_transferFulfillemnt_noCommitReservation() throws InterruptedException {
+		deadLetterExchangeQueue.clear();
+		
 		long start_to_amount = 1111L;
 		long start_from_amount = 9999L;
 		long transfer_amount = 8888L;
@@ -190,10 +194,8 @@ class Itest_TransferandFulfillFunds {
 		
 		TraceableMessage<TransferFulfillmentMessage> message = setup_message();
 		message.getPayload().setTransactionAmount(transfer_amount);
-		kafkaTransferFundsDeadLetterListener.setListening(true);
 		kafkaProducerDao.produceTransferFulfillmentMessage(message);
 		String deadLetter = deadLetterExchangeQueue.take();
-		kafkaTransferFundsDeadLetterListener.setListening(false);
 		
 		long toBalance = jdbcDao.selectBalance(TEST_TO_ACCOUNT);
 		assertEquals( expected_to_balance, toBalance );
@@ -206,105 +208,105 @@ class Itest_TransferandFulfillFunds {
 	
 	@Test
 	void test_transferFulfillemnt_malformed_fromAccount() throws InterruptedException {
+		deadLetterExchangeQueue.clear();
+		
 		// - setup --------------------
 		TraceableMessage<TransferFulfillmentMessage> message = setup_message();
 		message.getPayload().setFromAccountNumber(null);
 		
 		//execute
-		kafkaTransferFundsDeadLetterListener.setListening(true);
 		kafkaProducerDao.produceTransferFulfillmentMessage(message);
 		String deadLetter = deadLetterExchangeQueue.take();
-		kafkaTransferFundsDeadLetterListener.setListening(false);
 		
 		assertTrue( deadLetter.contains("Missing From Account Number"));
 	}
 	
 	@Test
 	void test_transferFulfillemnt_malformed_toAccount() throws InterruptedException {
+		deadLetterExchangeQueue.clear();
+		
 		// - setup --------------------
 		TraceableMessage<TransferFulfillmentMessage> message = setup_message();
 		message.getPayload().setToAccountNumber(null);
 		
 		//execute
-		kafkaTransferFundsDeadLetterListener.setListening(true);
 		kafkaProducerDao.produceTransferFulfillmentMessage(message);
 		String deadLetter = deadLetterExchangeQueue.take();
-		kafkaTransferFundsDeadLetterListener.setListening(false);
 		
 		assertTrue( deadLetter.contains("Missing From To Number"));
 	}
 	
 	@Test
 	void test_transferFulfillemnt_malformed_requestUUID() throws InterruptedException {
+		deadLetterExchangeQueue.clear();
+		
 		// - setup --------------------
 		TraceableMessage<TransferFulfillmentMessage> message = setup_message();
 		message.getPayload().setRequestUuid(null);
 		
 		//execute
-		kafkaTransferFundsDeadLetterListener.setListening(true);
 		kafkaProducerDao.produceTransferFulfillmentMessage(message);
 		String deadLetter = deadLetterExchangeQueue.take();
-		kafkaTransferFundsDeadLetterListener.setListening(false);
 		
 		assertTrue( deadLetter.contains("Missing From Request UUID"));
 	}
 	
 	@Test
 	void test_transferFulfillemnt_malformed_reservationUUID() throws InterruptedException {
+		deadLetterExchangeQueue.clear();
+		
 		// - setup --------------------
 		TraceableMessage<TransferFulfillmentMessage> message = setup_message();
 		message.getPayload().setReservationUuid(null);
 		
 		//execute
-		kafkaTransferFundsDeadLetterListener.setListening(true);
 		kafkaProducerDao.produceTransferFulfillmentMessage(message);
 		String deadLetter = deadLetterExchangeQueue.take();
-		kafkaTransferFundsDeadLetterListener.setListening(false);
 		
 		assertTrue( deadLetter.contains("Missing From Reservation UUID"));
 	}
 	
 	@Test
 	void test_transferFulfillemnt_malformed_amountZerot() throws InterruptedException {
+		deadLetterExchangeQueue.clear();
+		
 		// - setup --------------------
 		TraceableMessage<TransferFulfillmentMessage> message = setup_message();
 		message.getPayload().setTransactionAmount(0L);
 		
 		//execute
-		kafkaTransferFundsDeadLetterListener.setListening(true);
 		kafkaProducerDao.produceTransferFulfillmentMessage(message);
 		String deadLetter = deadLetterExchangeQueue.take();
-		kafkaTransferFundsDeadLetterListener.setListening(false);
 		
 		assertTrue( deadLetter.contains("Amount less than or equal to 0"));
 	}
 	
 	@Test
 	void test_transferFulfillemnt_malformed_amountLTzero() throws InterruptedException {
+		deadLetterExchangeQueue.clear();
+		
 		// - setup --------------------
 		TraceableMessage<TransferFulfillmentMessage> message = setup_message();
 		message.getPayload().setTransactionAmount(-1L);
 		
 		//execute
-		kafkaTransferFundsDeadLetterListener.setListening(true);
 		kafkaProducerDao.produceTransferFulfillmentMessage(message);
 		String deadLetter = deadLetterExchangeQueue.take();
-		kafkaTransferFundsDeadLetterListener.setListening(false);
 		
 		assertTrue( deadLetter.contains("Amount less than or equal to 0"));
 	}
 	
 	@Test
 	void test_transferFulfillemnt_malformed_jsonMetaData() throws InterruptedException {
+		deadLetterExchangeQueue.clear();
+		
 		// - setup --------------------
 		TraceableMessage<TransferFulfillmentMessage> message = setup_message();
 		message.getPayload().setTransactionMetaDataJson(null);
 		
 		//execute
-		kafkaTransferFundsDeadLetterListener.setListening(true);
 		kafkaProducerDao.produceTransferFulfillmentMessage(message);
 		String deadLetter = deadLetterExchangeQueue.take();
-		kafkaTransferFundsDeadLetterListener.setListening(false);
 		
 		assertTrue( deadLetter.contains("Missing Meta Data"));
 	}
@@ -312,90 +314,90 @@ class Itest_TransferandFulfillFunds {
 	
 	@Test
 	void test_transferFulfillemnt_malformed_ait() throws InterruptedException {
+		deadLetterExchangeQueue.clear();
+		
 		// - setup --------------------
 		TraceableMessage<TransferFulfillmentMessage> message = setup_message();
 		message.setProducerAit(null);
 		
 		//execute
-		kafkaTransferFundsDeadLetterListener.setListening(true);
 		kafkaProducerDao.produceTransferFulfillmentMessage(message);
 		String deadLetter = deadLetterExchangeQueue.take();
-		kafkaTransferFundsDeadLetterListener.setListening(false);
 		
 		assertTrue( deadLetter.contains("Missing Producer AIT Id"));
 	}
 	
 	@Test
 	void test_transferFulfillemnt_malformed_correlation() throws InterruptedException {
+		deadLetterExchangeQueue.clear();
+		
 		// - setup --------------------
 		TraceableMessage<TransferFulfillmentMessage> message = setup_message();
 		message.setCorrelationId(null);
 		
 		//execute
-		kafkaTransferFundsDeadLetterListener.setListening(true);
 		kafkaProducerDao.produceTransferFulfillmentMessage(message);
 		String deadLetter = deadLetterExchangeQueue.take();
-		kafkaTransferFundsDeadLetterListener.setListening(false);
 		
 		assertTrue( deadLetter.contains("Missing Correlation Id"));
 	}
 	
 	@Test
 	void test_transferFulfillemnt_malformed_taxonomu() throws InterruptedException {
+		deadLetterExchangeQueue.clear();
+		
 		// - setup --------------------
 		TraceableMessage<TransferFulfillmentMessage> message = setup_message();
 		message.setBusinessTaxonomyId(null);
 		
 		//execute
-		kafkaTransferFundsDeadLetterListener.setListening(true);
 		kafkaProducerDao.produceTransferFulfillmentMessage(message);
 		String deadLetter = deadLetterExchangeQueue.take();
-		kafkaTransferFundsDeadLetterListener.setListening(false);
 		
 		assertTrue( deadLetter.contains("Missing Business Taxonomy Id"));
 	}
 	
 	@Test
 	void test_transferFulfillemnt_malformed_creationTime() throws InterruptedException {
+		deadLetterExchangeQueue.clear();
+		
 		// - setup --------------------
 		TraceableMessage<TransferFulfillmentMessage> message = setup_message();
 		message.setMessageCreationTime(null);
 		
 		//execute
-		kafkaTransferFundsDeadLetterListener.setListening(true);
 		kafkaProducerDao.produceTransferFulfillmentMessage(message);
 		String deadLetter = deadLetterExchangeQueue.take();
-		kafkaTransferFundsDeadLetterListener.setListening(false);
 		
 		assertTrue( deadLetter.contains("Missing Message Creation Time"));
 	}
 
 	@Test
 	void test_transferFulfillemnt_malformed_nullVersion() throws InterruptedException {
+		deadLetterExchangeQueue.clear();
+		
 		// - setup --------------------
 		TraceableMessage<TransferFulfillmentMessage> message = setup_message();
 		message.getPayload().setVersion(null);
 		
 		//execute
-		kafkaTransferFundsDeadLetterListener.setListening(true);
 		kafkaProducerDao.produceTransferFulfillmentMessage(message);
 		String deadLetter = deadLetterExchangeQueue.take();
-		kafkaTransferFundsDeadLetterListener.setListening(false);
 		
 		assertTrue( deadLetter.contains("Invalid version"));
 	}
 	
 	@Test
 	void test_transferFulfillemnt_malformed_version() throws InterruptedException {
+		deadLetterExchangeQueue.clear();
+		
 		// - setup --------------------
 		TraceableMessage<TransferFulfillmentMessage> message = setup_message();
 		message.getPayload().setVersion("XXX");
 		
 		//execute
-		kafkaTransferFundsDeadLetterListener.setListening(true);
 		kafkaProducerDao.produceTransferFulfillmentMessage(message);
 		String deadLetter = deadLetterExchangeQueue.take();
-		kafkaTransferFundsDeadLetterListener.setListening(false);
 		
 		assertTrue( deadLetter.contains("Invalid version"));
 	}
